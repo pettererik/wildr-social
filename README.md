@@ -34,6 +34,24 @@ Instagram carousel + Facebook page post  ──►  posted/
 }
 ```
 
+### Video posts (Reels)
+
+A post can be a video instead of a carousel — published as an Instagram Reel
+and a Facebook video:
+
+```json
+{
+  "caption": "…",
+  "video": "assets/video/asahi-dake-run.mp4",
+  "images": [],
+  "platforms": ["instagram", "facebook"]
+}
+```
+
+Drop finished vertical clips (9:16, MP4, **under 95 MB** — GitHub raw-file limit)
+into `assets/video/`. Edit them in CapCut/Canva first if needed; the publisher
+takes them as-is.
+
 ## Refilling the queue
 
 Content is generated in batches with the `wildr-social` Claude skill

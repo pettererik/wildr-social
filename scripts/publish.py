@@ -44,9 +44,9 @@ def api(path: str, params: dict) -> dict:
     return json.loads(body)
 
 
-def wait_ready(container_id: str, token: str):
+def wait_ready(container_id: str, token: str, attempts: int = 20):
     """Poll a media container until Meta has finished processing it."""
-    for _ in range(20):
+    for _ in range(attempts):
         url = f"{GRAPH}/{container_id}?fields=status_code&access_token={urllib.parse.quote(token)}"
         status = json.loads(urllib.request.urlopen(url, timeout=60).read())
         code = status.get("status_code")
@@ -56,6 +56,32 @@ def wait_ready(container_id: str, token: str):
             sys.exit(f"Container {container_id} failed processing")
         time.sleep(3)
     sys.exit(f"Container {container_id} never finished processing")
+
+
+def publish_instagram_reel(ig_id, token, caption, video_url):
+    container = api(
+        f"{ig_id}/media",
+        {
+            "media_type": "REELS",
+            "video_url": video_url,
+            "caption": caption,
+            "share_to_feed": "true",
+            "access_token": token,
+        },
+    )["id"]
+    wait_ready(container, token, attempts=60)  # video processing takes a while
+    result = api(f"{ig_id}/media_publish", {"creation_id": container, "access_token": token})
+    print(f"Instagram: published reel {result['id']}")
+    return result["id"]
+
+
+def publish_facebook_video(page_id, token, caption, video_url):
+    result = api(
+        f"{page_id}/videos",
+        {"file_url": video_url, "description": caption, "access_token": token},
+    )
+    print(f"Facebook: published video {result['id']}")
+    return result["id"]
 
 
 def publish_instagram(ig_id, token, caption, image_urls):
@@ -116,31 +142,45 @@ def main():
     caption = post["caption"].strip()
     repo = os.environ.get("GITHUB_REPOSITORY", "")
     sha = os.environ.get("GITHUB_SHA", "main")
-    image_urls = [
-        f"https://raw.githubusercontent.com/{repo}/{sha}/{urllib.parse.quote(rel)}"
-        for rel in post["images"]
-    ]
-    for rel in post["images"]:
-        if not (ROOT / rel).exists():
-            sys.exit(f"Missing image file: {rel}")
 
-    print(f"Publishing {post_dir.name}: {len(image_urls)} image(s)")
+    def raw_url(rel):
+        return f"https://raw.githubusercontent.com/{repo}/{sha}/{urllib.parse.quote(rel)}"
+
+    video = post.get("video")
+    media_rels = [video] if video else post["images"]
+    for rel in media_rels:
+        if not (ROOT / rel).exists():
+            sys.exit(f"Missing media file: {rel}")
+    media_urls = [raw_url(rel) for rel in media_rels]
+
+    kind = "video" if video else f"{len(media_urls)} image(s)"
+    print(f"Publishing {post_dir.name}: {kind}")
     if dry:
         print("[dry-run] caption:\n" + caption)
-        print("[dry-run] urls:\n" + "\n".join(image_urls))
+        print("[dry-run] urls:\n" + "\n".join(media_urls))
         return
 
     token = os.environ["META_TOKEN"]
     results = {}
     platforms = post.get("platforms", ["instagram", "facebook"])
     if "instagram" in platforms:
-        results["instagram"] = publish_instagram(
-            os.environ["IG_USER_ID"], token, caption, image_urls
-        )
+        if video:
+            results["instagram"] = publish_instagram_reel(
+                os.environ["IG_USER_ID"], token, caption, media_urls[0]
+            )
+        else:
+            results["instagram"] = publish_instagram(
+                os.environ["IG_USER_ID"], token, caption, media_urls
+            )
     if "facebook" in platforms:
-        results["facebook"] = publish_facebook(
-            os.environ["FB_PAGE_ID"], token, caption, image_urls
-        )
+        if video:
+            results["facebook"] = publish_facebook_video(
+                os.environ["FB_PAGE_ID"], token, caption, media_urls[0]
+            )
+        else:
+            results["facebook"] = publish_facebook(
+                os.environ["FB_PAGE_ID"], token, caption, media_urls
+            )
 
     post["published"] = {"at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), **results}
     (post_dir / "post.json").write_text(json.dumps(post, indent=2, ensure_ascii=False))

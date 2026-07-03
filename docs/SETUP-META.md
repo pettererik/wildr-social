@@ -4,10 +4,15 @@ You need three values as GitHub secrets: `META_TOKEN`, `IG_USER_ID`, `FB_PAGE_ID
 
 ## 0. Prerequisites
 
-- The Wildr **Instagram account must be a Business (or Creator) account** and
-  **linked to the Wildr Facebook Page** (Page id `61577232899917`).
-  Check: Meta Business Suite → Settings → Linked accounts. If Instagram isn't
-  linked, link it there first — nothing below works without it.
+Posts go to Instagram **@pettererik** and the Facebook Page (id `61577232899917`).
+
+- **@pettererik must be a Professional account** (Creator or Business). If it's
+  a personal account, the API cannot post to it. Convert in the Instagram app:
+  Settings → Account type and tools → Switch to professional account.
+  Followers, content and handle are unchanged; this only unlocks tools.
+- **@pettererik must be linked to the Facebook Page** `61577232899917`.
+  Check: Meta Business Suite → Settings → Linked accounts (or Instagram app →
+  Edit profile → Page). Nothing below works without this link.
 
 ## 1. Create a Meta app
 
