@@ -2,8 +2,14 @@
 
 Automated Instagram + Facebook carousel posting for **Wildr Japan / Chase the Powder**.
 
-Posts go out **Monday, Wednesday and Friday at 08:00 UTC** (18:00 AEST) via a
-GitHub Action that publishes the next post in `queue/` through the Meta Graph API.
+Two GitHub Actions publish through the Meta Graph API:
+
+- **Feed posts** (carousels/Reels): Mon/Wed/Fri 08:00 UTC, next folder in `queue/`
+- **Stories** (IG + FB Page): Tue/Thu/Sat 08:00 UTC, next folder in `stories/`
+
+Feed videos are published as an Instagram Reel + Facebook Reel. Story media is
+9:16 (use `fetch_photos.py --story`, outputs to `assets/story/`); set
+`"format": "story"` in its post.json. Story caption text is not rendered.
 
 ## How it works
 

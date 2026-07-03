@@ -72,10 +72,10 @@ def sips_dim(path: pathlib.Path):
     return w, h
 
 
-def to_portrait(path: pathlib.Path):
-    """Cover-fit to 1080x1350: upscale-resample then center-crop."""
+def to_portrait(path: pathlib.Path, tw: int = TARGET_W, th: int = TARGET_H):
+    """Cover-fit to target size: upscale-resample then center-crop."""
     w, h = sips_dim(path)
-    scale = max(TARGET_W / w, TARGET_H / h)
+    scale = max(tw / w, th / h)
     nw, nh = round(w * scale), round(h * scale)
     subprocess.run(
         ["sips", "--resampleHeightWidth", str(nh), str(nw), str(path)],
@@ -83,7 +83,7 @@ def to_portrait(path: pathlib.Path):
         check=True,
     )
     subprocess.run(
-        ["sips", "--cropToHeightWidth", str(TARGET_H), str(TARGET_W), str(path)],
+        ["sips", "--cropToHeightWidth", str(th), str(tw), str(path)],
         capture_output=True,
         check=True,
     )
@@ -94,9 +94,18 @@ def main():
     ap.add_argument("--folder", required=True, help="Google Drive folder id")
     ap.add_argument("--limit", type=int, default=0, help="max new photos")
     ap.add_argument("--landscape", action="store_true", help="skip 4:5 crop")
+    ap.add_argument(
+        "--story",
+        action="store_true",
+        help="crop to 9:16 (1080x1920) into assets/story/ instead of 4:5",
+    )
     args = ap.parse_args()
 
-    ASSETS.mkdir(exist_ok=True)
+    global ASSETS, TARGET_W, TARGET_H
+    if args.story:
+        ASSETS = ROOT / "assets" / "story"
+        TARGET_W, TARGET_H = 1080, 1920
+    ASSETS.mkdir(parents=True, exist_ok=True)
     files = list_folder(args.folder)
     print(f"Folder lists {len(files)} image files")
 
@@ -116,7 +125,7 @@ def main():
             dest.unlink(missing_ok=True)
             continue
         if not args.landscape:
-            to_portrait(dest)
+            to_portrait(dest, TARGET_W, TARGET_H)
         print(f"  OK   {dest.name}")
         fetched += 1
 
