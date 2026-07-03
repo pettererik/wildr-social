@@ -36,7 +36,7 @@ def list_folder(folder_id: str):
             "Could not read the folder. Is it shared as 'Anyone with the link'?"
         )
     entries = re.findall(
-        r'flip-entry-id="entry-([\w-]+)".*?flip-entry-title">([^<]+)<',
+        r'class="flip-entry" id="entry-([\w-]+)".*?flip-entry-title">([^<]+)<',
         body,
         re.S,
     )
