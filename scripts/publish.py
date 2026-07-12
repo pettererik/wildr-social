@@ -228,9 +228,12 @@ def main():
         return
 
     token = os.environ["META_TOKEN"]
-    ig_id, page_id = os.environ["IG_USER_ID"], os.environ["FB_PAGE_ID"]
+    ig_id, page_id = os.environ.get("IG_USER_ID", ""), os.environ["FB_PAGE_ID"]
     results = {}
     platforms = post.get("platforms", ["instagram", "facebook"])
+    if "instagram" in platforms and (not ig_id or ig_id == "PENDING"):
+        print("IG_USER_ID not configured yet — skipping Instagram for this post")
+        platforms = [p for p in platforms if p != "instagram"]
     if fmt == "story":
         # Stories take one media item; caption text is not shown on stories.
         if "instagram" in platforms:
